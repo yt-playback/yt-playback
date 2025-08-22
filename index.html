@@ -277,6 +277,10 @@ markStartBtn.addEventListener("click", () => {
   if (currentSQ !== null) {
     startSQ = currentSQ;
     updateCommand();
+
+    // muda para verde e mantém
+    markStartBtn.style.backgroundColor = "rgba(0,150,0,0.7)";
+    markStartBtn.style.color = "white"; // melhora contraste
   }
 });
 
@@ -284,6 +288,10 @@ markEndBtn.addEventListener("click", () => {
   if (currentSQ !== null) {
     endSQ = currentSQ;
     updateCommand();
+
+    // muda para verde e mantém
+    markEndBtn.style.backgroundColor = "rgba(0,150,0,0.7)";
+    markEndBtn.style.color = "white"; // melhora contraste
   }
 });
 
@@ -326,15 +334,20 @@ function updateCommand() {
 }
 
 
-  copyBtn.addEventListener("click", () => {
-    if (commandOutput.value) {
-      navigator.clipboard.writeText(commandOutput.value).then(() => {
-        copyBtn.textContent = "Copiado!";
-        setTimeout(() => { copyBtn.textContent = "Copiar"; }, 1500);
-      });
-    }
-  });
+copyBtn.addEventListener("click", () => {
+  if (commandOutput.value) {
+    navigator.clipboard.writeText(commandOutput.value).then(() => {
+      const oldColor = getComputedStyle(copyBtn).backgroundColor; // pega a cor real (ex: vermelho do CSS)
+      copyBtn.style.backgroundColor = "rgba(0,150,0,0.7)";
+      copyBtn.textContent = "Copiado!";
 
+      setTimeout(() => {
+        copyBtn.style.backgroundColor = oldColor; // volta pro vermelho original
+        copyBtn.textContent = "Copiar";
+      }, 400);
+    });
+  }
+});
   // --- copiar ao clicar ---
   function enableCopy(panel) {
     panel.addEventListener("click", () => {
