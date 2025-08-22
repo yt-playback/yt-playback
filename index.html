@@ -249,7 +249,8 @@ ________________________________________________
     setInterval(() => {
       if (player && player.getCurrentTime) {
         const time = player.getCurrentTime();
-        const sq = Math.floor((time - tempoRef) / duracaoSegmento) + offsetSQ;
+        let rawSQ = Math.floor((time - tempoRef) / duracaoSegmento);
+        const sq = rawSQ + (rawSQ + 1 >= 145 ? offsetSQ : 1);
         currentSQ = sq;
         panelLive.innerText = "SQ VOD: " + sq;
         updateCommand();
@@ -325,6 +326,7 @@ ________________________________________________
 
 </body>
 </html>
+
 
 
 
