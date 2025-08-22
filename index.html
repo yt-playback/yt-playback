@@ -136,6 +136,15 @@ a.download-btn {
 a.download-btn:hover {
   background-color: #c22;
 }
+#selectionTime .w-2 {
+  position: absolute;
+  top: -3.5px;   /* Ajusta a posição para cima */
+  right: -30px;  /* Posição à direita */
+  width: 25px;   /* Tamanho da bolinha */
+  height: 25px;  /* Tamanho da bolinha */
+  background-color: #e3342f; /* Cor vermelha */
+  border-radius: 50%;  /* Faz a bolinha ser redonda */
+}
   </style>
 </head>
 <body class="flex flex-col items-center min-h-screen p-6">
@@ -152,10 +161,16 @@ a.download-btn:hover {
     </button>
   </div>
 
-  <!-- Player -->
-  <div class="w-full max-w-4xl aspect-video bg-black rounded-2xl shadow-lg overflow-hidden mb-6">
-    <div id="ytPlayer"></div>
+<!-- Player -->
+<div class="w-full max-w-4xl aspect-video bg-black rounded-2xl shadow-lg overflow-hidden mb-6 relative">
+  <div id="ytPlayer"></div>
+  <div id="selectionTime" class="absolute top-2 left-1/2 transform -translate-x-1/2 text-center z-10 hidden">
+    <div class="bg-red-600 text-white text-sm font-semibold px-3 py-1 rounded-full inline-block shadow-lg">
+      00:00
+    </div>
+    <div class="w-2 h-2 bg-red-600 rounded-full mx-auto mt-1"></div>
   </div>
+</div>
 
   <!-- Botões SQ VOD + I e F combinados -->
   <div class="btn-group">
@@ -245,63 +260,70 @@ ________________________________________________
   
   
 
-  function onPlayerReady() {
-    setInterval(() => {
-      if (player && player.getCurrentTime) {
-        const time = player.getCurrentTime();
-        let rawSQ = Math.floor((time - tempoRef) / duracaoSegmento);
-        const sq = rawSQ + (rawSQ + 1 >= 145 ? offsetSQ : 1);
-        currentSQ = sq;
-        panelLive.innerText = "SQ VOD: " + sq;
-        updateCommand();
-      }
-    }, 500);
-  }
-
-  markStartBtn.addEventListener("click", () => {
-    if (currentSQ !== null) {
-      startSQ = currentSQ;
+function onPlayerReady() {
+  setInterval(() => {
+    if (player && player.getCurrentTime) {
+      const time = player.getCurrentTime();
+      let rawSQ = Math.floor((time - tempoRef) / duracaoSegmento);
+      const sq = rawSQ + (rawSQ + 1 >= 145 ? offsetSQ : 1);
+      currentSQ = sq;
+      panelLive.innerText = "SQ VOD: " + sq;
       updateCommand();
     }
-  });
+  }, 500);
+}
 
-  markEndBtn.addEventListener("click", () => {
-    if (currentSQ !== null) {
-      endSQ = currentSQ;
-      updateCommand();
-    }
-  });
+markStartBtn.addEventListener("click", () => {
+  if (currentSQ !== null) {
+    startSQ = currentSQ;
+    updateCommand();
+  }
+});
 
-  function updateCommand() {
-    if (!currentURL || currentSQ === null) {
-      commandOutput.value = "";
-      return;
-    }
-    // Usa os valores marcados ou padrão
-    const inicio = startSQ !== null ? startSQ : currentSQ;
-    const fim = endSQ !== null ? endSQ : currentSQ + 1;
+markEndBtn.addEventListener("click", () => {
+  if (currentSQ !== null) {
+    endSQ = currentSQ;
+    updateCommand();
+  }
+});
 
-    // Garante que inicio <= fim
-    const realInicio = Math.min(inicio, fim);
-    const realFim = Math.max(inicio, fim);
-
-    const cmd = `yt-pb "${currentURL}" -inicio ${realInicio} -fim ${realFim} -O "output.ts"`;
-    commandOutput.value = cmd;
-
-    // Atualiza texto dos botões pra feedback visual
-    markStartBtn.textContent = `I (${realInicio})`;
-    markEndBtn.textContent = `F (${realFim})`;
+function updateCommand() {
+  if (!currentURL || currentSQ === null) {
+    commandOutput.value = "";
+    return;
   }
 
-  copyBtn.addEventListener("click", () => {
-    if (commandOutput.value) {
-      navigator.clipboard.writeText(commandOutput.value).then(() => {
-        copyBtn.textContent = "Copiado!";
-        setTimeout(() => { copyBtn.textContent = "Copiar"; }, 1500);
-      });
-    }
-  });
+  // Usa os valores marcados ou padrão
+  const inicio = startSQ !== null ? startSQ : currentSQ;
+  const fim = endSQ !== null ? endSQ : currentSQ + 1;
 
+  // Garante que inicio <= fim
+  const realInicio = Math.min(inicio, fim);
+  const realFim = Math.max(inicio, fim);
+
+  const cmd = `yt-pb "${currentURL}" -inicio ${realInicio} -fim ${realFim} -O "output.ts"`;
+  commandOutput.value = cmd;
+
+  // Atualiza texto dos botões para feedback visual
+  markStartBtn.textContent = `I (${realInicio})`;
+  markEndBtn.textContent = `F (${realFim})`;
+
+  // Calcular duração e exibir balão com tempo selecionado
+  const duration = (realFim - realInicio) * duracaoSegmento; // multiplicar pelos 5s de cada segmento
+  const hours = String(Math.floor(duration / 3600)).padStart(2, '0');  // Cálculo das horas
+  const minutes = String(Math.floor((duration % 3600) / 60)).padStart(2, '0');  // Cálculo dos minutos
+  const seconds = String(duration % 60).padStart(2, '0');  // Cálculo dos segundos
+  const formatted = `${hours}:${minutes}:${seconds}`;  // Formato completo com horas
+
+  // Atualizar balão de tempo
+  const bubble = document.getElementById("selectionTime");
+  if (duration > 0) {
+    bubble.classList.remove("hidden");
+    bubble.querySelector("div").innerText = formatted;
+  } else {
+    bubble.classList.add("hidden");
+  }
+}
 
 
   // --- copiar ao clicar ---
