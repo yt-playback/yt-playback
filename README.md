@@ -18,7 +18,11 @@ Here are some ideas to get you started:
 
 
 Comando basico para recuperar playback
+
 yt-pb "url" -inicio 4380546 -fim 4380646 -O "output.ts"
 
+
+
 Outros:
+
 Habilitar DVR na live (Requer tempermonkey) - https://greasyfork.org/pt-BR/scripts/536335-unlock-yt-live-rewind
