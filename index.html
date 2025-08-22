@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>YouTube Live Playback Analyzer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: #0f0f0f;
+      color: #f9f9f9;
+      font-family: 'Inter', sans-serif;
+    }
+    .panel { transition: all 0.3s ease; }
+    .panel:hover { transform: scale(1.05); }
+    #ytPlayer {
+      width: 100%;
+      height: 100%;
+    }
+    .command-container {
+      max-width: 768px;
+      width: 100%;
+      margin-top: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    textarea#commandOutput {
+      flex: 1;
+      height: 4rem;
+      background: #1a1a1a;
+      color: #f9f9f9;
+      border-radius: 0.75rem;
+      padding: 0.5rem 1rem;
+      font-family: monospace;
+      font-size: 1rem;
+      resize: none;
+      border: none;
+      outline: none;
+    }
+    button#copyBtn {
+      background-color: #e3342f;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+    button#copyBtn:hover {
+      background-color: #cc1f1a;
+    }
+    button#copyBtn:active {
+      background-color: #a41510;
+    }
+
+    /* Botões SQ VOD, I e F combinados */
+
+    .btn-group {
+      display: flex;
+      max-width: 768px;
+      margin: 0 auto 2rem;
+      gap: 0;
+    }
+
+.btn {
+  background-color: #9c1d1d;
+  color: white;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  padding: 0.75rem 1.5rem; /* padding consistente para todos */
+  font-size: 1rem;
+  user-select: none;
+  transition: background-color 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* SQ VOD - mais largo, cantos arredondados só à esquerda */
+.btn-main {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  padding-left: 6rem;  /* mais espaço à esquerda */
+  padding-right: 6rem; /* mais espaço à direita */
+  width: auto;         /* sem largura fixa */
+  margin-right: 0.5rem;
+}
+
+/* Botão I - cantos retos, sem largura fixa */
+#markStartBtn {
+  border-radius: 0; /* TODOS cantos retos */
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  margin-right: 0.5rem; /* espaço entre I e F */
+  width: auto;          /* remove largura fixa */
+}
+
+/* Botão F - cantos arredondados só à direita, sem largura fixa */
+#markEndBtn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  width: auto;          /* remove largura fixa */
+}
+
+.btn:hover {
+  background-color: #b22a2a;
+}
+
+/* Arredondar os botões Carregar e Copiar */
+#loadBtn, #copyBtn {
+  border-radius: 0.75rem;
+}
+a.download-btn {
+  background-color: #e33;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+    border-radius: 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+a.download-btn:hover {
+  background-color: #c22;
+}
+  </style>
+</head>
+<body class="flex flex-col items-center min-h-screen p-6">
+
+  <h1 class="text-3xl font-bold mb-6 text-red-500">YouTube Live Playback Analyzer</h1>
+
+  <!-- Campo de URL -->
+  <div class="w-full max-w-xl flex gap-2 mb-6">
+    <input id="videoUrl" type="text" placeholder="Cole a URL do YouTube aqui..." value="https://www.youtube.com/watch?v=ABVQXgr2LW4"
+      class="flex-1 px-4 py-2 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-red-500" />
+    <button id="loadBtn"
+      class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold">
+      Carregar
+    </button>
+  </div>
+
+  <!-- Player -->
+  <div class="w-full max-w-4xl aspect-video bg-black rounded-2xl shadow-lg overflow-hidden mb-6">
+    <div id="ytPlayer"></div>
+  </div>
+
+  <!-- Botões SQ VOD + I e F combinados -->
+  <div class="btn-group">
+    <button id="panelLive" class="btn btn-main">SQ VOD: ---</button>
+    <button id="markStartBtn" class="btn">I</button>
+    <button id="markEndBtn" class="btn">F</button>
+  </div>
+
+  <!-- Comando e botão copiar -->
+  <div class="command-container">
+    <textarea id="commandOutput" readonly placeholder="Aqui aparecerá o comando montado..."></textarea>
+    <button id="copyBtn" title="Copiar comando">Copiar</button>
+
+  <a href="URL_DO_DESTINO" target="_blank" class="download-btn" download title="Baixar arquivo">Download</a>
+</div>
+
+<script>
+  const panelLive = document.getElementById("panelLive");
+  const commandOutput = document.getElementById("commandOutput");
+  const copyBtn = document.getElementById("copyBtn");
+  const markStartBtn = document.getElementById("markStartBtn");
+  const markEndBtn = document.getElementById("markEndBtn");
+
+  let player = null;
+
+  const duracaoSegmento = 5;
+  const offsetSQ = 145;
+  const tempoRef = 0;
+
+  let currentURL = "";
+  let currentSQ = null;
+
+  let startSQ = null;
+  let endSQ = null;
+
+  document.getElementById("loadBtn").addEventListener("click", () => {
+    const url = document.getElementById("videoUrl").value.trim();
+    if (!url) return;
+
+    currentURL = url;
+    try {
+      const u = new URL(url);
+      let videoId = null;
+      if (u.hostname.includes("youtu.be")) {
+        videoId = u.pathname.slice(1);
+      } else {
+        videoId = u.searchParams.get("v");
+      }
+
+      if (videoId) {
+        loadPlayer(videoId);
+        resetPanels();
+      } else {
+        alert("URL inválida");
+      }
+    } catch (e) {
+      alert("URL inválida");
+    }
+  });
+
+  function resetPanels() {
+    panelLive.innerText = "SQ VOD: ---";
+    commandOutput.value = "";
+    currentSQ = null;
+    startSQ = null;
+    endSQ = null;
+    markStartBtn.textContent = "I";
+    markEndBtn.textContent = "F";
+  }
+
+  function loadPlayer(videoId) {
+    if (player) player.destroy();
+    player = new YT.Player("ytPlayer", {
+      videoId: videoId,
+      events: {
+        'onReady': onPlayerReady
+      }
+    });
+  }
+  
+  
+
+  function onPlayerReady() {
+    setInterval(() => {
+      if (player && player.getCurrentTime) {
+        const time = player.getCurrentTime();
+        const sq = Math.floor((time - tempoRef) / duracaoSegmento) + offsetSQ;
+        currentSQ = sq;
+        panelLive.innerText = "SQ VOD: " + sq;
+        updateCommand();
+      }
+    }, 500);
+  }
+
+  markStartBtn.addEventListener("click", () => {
+    if (currentSQ !== null) {
+      startSQ = currentSQ;
+      updateCommand();
+    }
+  });
+
+  markEndBtn.addEventListener("click", () => {
+    if (currentSQ !== null) {
+      endSQ = currentSQ;
+      updateCommand();
+    }
+  });
+
+  function updateCommand() {
+    if (!currentURL || currentSQ === null) {
+      commandOutput.value = "";
+      return;
+    }
+    // Usa os valores marcados ou padrão
+    const inicio = startSQ !== null ? startSQ : currentSQ;
+    const fim = endSQ !== null ? endSQ : currentSQ + 1;
+
+    // Garante que inicio <= fim
+    const realInicio = Math.min(inicio, fim);
+    const realFim = Math.max(inicio, fim);
+
+    const cmd = `yt-pb "${currentURL}" -inicio ${realInicio} -fim ${realFim} -O "output.ts"`;
+    commandOutput.value = cmd;
+
+    // Atualiza texto dos botões pra feedback visual
+    markStartBtn.textContent = `I (${realInicio})`;
+    markEndBtn.textContent = `F (${realFim})`;
+  }
+
+  copyBtn.addEventListener("click", () => {
+    if (commandOutput.value) {
+      navigator.clipboard.writeText(commandOutput.value).then(() => {
+        copyBtn.textContent = "Copiado!";
+        setTimeout(() => { copyBtn.textContent = "Copiar"; }, 1500);
+      });
+    }
+  });
+
+
+
+  // --- copiar ao clicar ---
+  function enableCopy(panel) {
+    panel.addEventListener("click", () => {
+      const sqText = panel.innerText.split(":")[1].trim();
+      if (sqText !== "---") {
+        navigator.clipboard.writeText(sqText).then(() => {
+          const old = panel.style.backgroundColor;
+          panel.style.backgroundColor = "rgba(0,150,0,0.7)";
+          setTimeout(() => { panel.style.backgroundColor = old; }, 400);
+        });
+      }
+    });
+  }
+  enableCopy(panelLive);
+
+  const tag = document.createElement("script");
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
+</script>
+
+</body>
+</html>
+
