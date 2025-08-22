@@ -326,6 +326,15 @@ function updateCommand() {
 }
 
 
+  copyBtn.addEventListener("click", () => {
+    if (commandOutput.value) {
+      navigator.clipboard.writeText(commandOutput.value).then(() => {
+        copyBtn.textContent = "Copiado!";
+        setTimeout(() => { copyBtn.textContent = "Copiar"; }, 1500);
+      });
+    }
+  });
+
   // --- copiar ao clicar ---
   function enableCopy(panel) {
     panel.addEventListener("click", () => {
