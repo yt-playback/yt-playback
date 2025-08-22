@@ -14,3 +14,8 @@ Here are some ideas to get you started:
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ...
 -->
+
+
+
+
+yt-pb "url" -inicio 4380546 -fim 4380646 -O "output.ts"
