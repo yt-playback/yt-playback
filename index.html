@@ -309,29 +309,47 @@ function updateCommand() {
   const realInicio = Math.min(inicio, fim);
   const realFim = Math.max(inicio, fim);
 
-  const cmd = `yt-pb "${currentURL}" -inicio ${realInicio} -fim ${realFim} -O "output.ts"`;
-  commandOutput.value = cmd;
+  // Pega o título do vídeo usando a API do YouTube
+  let videoTitle = "output"; // Caso não consiga pegar o título
+  try {
+    const videoData = player.getVideoData();
+    videoTitle = videoData.title.replace(/[\/:*?"<>|]/g, ""); // Remove caracteres inválidos do título
+  } catch (e) {
+    console.error("Não foi possível obter o título do vídeo", e);
+  }
+
+  // Obter a data e hora atual no formato desejado (YYYYMMDD_HHMM)
+  const now = new Date();
+  const year = now.getFullYear(); // Ano
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Mês (ajustado para começar de 1)
+  const day = String(now.getDate()).padStart(2, '0'); // Dia
+  const hours = String(now.getHours()).padStart(2, '0'); // Hora
+  const minutes = String(now.getMinutes()).padStart(2, '0'); // Minutos
+  
+  const formattedDate = `${year}${month}${day}`;  // Data no formato YYYYMMDD
+  const formattedTime = `${hours}${minutes}`;    // Hora e minuto no formato HHMM
+
+  // Formatar o nome do arquivo
+  const cmd = `"${videoTitle}_${formattedDate}_${formattedTime}.ts"`;
+
+  // Atualiza o campo de saída
+  commandOutput.value = `yt-pb "${currentURL}" -inicio ${realInicio} -fim ${realFim} -O ${cmd}`;
 
   // Atualiza texto dos botões para feedback visual
   markStartBtn.textContent = `I (${realInicio})`;
   markEndBtn.textContent = `F (${realFim})`;
 
-  // Calcular duração e exibir balão com tempo selecionado
-  const duration = (realFim - realInicio) * duracaoSegmento; // multiplicar pelos 5s de cada segmento
-  const hours = String(Math.floor(duration / 3600)).padStart(2, '0');  // Cálculo das horas
-  const minutes = String(Math.floor((duration % 3600) / 60)).padStart(2, '0');  // Cálculo dos minutos
-  const seconds = String(duration % 60).padStart(2, '0');  // Cálculo dos segundos
-  const formatted = `${hours}:${minutes}:${seconds}`;  // Formato completo com horas
-
   // Atualizar balão de tempo
   const bubble = document.getElementById("selectionTime");
+  const duration = (realFim - realInicio) * duracaoSegmento;
   if (duration > 0) {
     bubble.classList.remove("hidden");
-    bubble.querySelector("div").innerText = formatted;
+    bubble.querySelector("div").innerText = formattedTime;
   } else {
     bubble.classList.add("hidden");
   }
 }
+
 
 
 copyBtn.addEventListener("click", () => {
