@@ -19,10 +19,18 @@ Here are some ideas to get you started:
 
 Comando basico para recuperar playback
 
-yt-pb "url" -inicio 4380546 -fim 4380646 -O "output.ts"
+yt-pb "url" -inicio 22:00 -fim 22:20 -O "output.ts"
+
+
+
+Command Builder:
+
+https://yt-playback.github.io/yt-playback/
 
 
 
 Outros:
 
 Habilitar DVR na live (Requer tempermonkey) - https://greasyfork.org/pt-BR/scripts/536335-unlock-yt-live-rewind
+
+
