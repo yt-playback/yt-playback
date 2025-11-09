@@ -23,6 +23,7 @@ yt-pb "url" -inicio 22:00 -fim 22:20 -O "output.ts"
 
 
 
+
 Command Builder:
 
 https://yt-playback.github.io/yt-playback/
